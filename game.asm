@@ -90,6 +90,8 @@ segment .text
 	extern  usleep
 	extern	fcntl
 
+	extern  rand
+
 asm_main:
 	enter	0,0
 	pusha
@@ -104,7 +106,7 @@ asm_main:
 	; set the player at the proper start position
 	mov		DWORD [xpos], STARTX
 	mov		DWORD [ypos], STARTY
-
+	; set the monster at the proper start position
 	mov 	DWORD [xMonPos], MONSTERX
 	mov 	DWORD [yMonPos], MONSTERY
 
@@ -123,6 +125,65 @@ asm_main:
 		call usleep
 		add  esp, 4
 		dec  DWORD [gold_counter]
+		
+		; Check the monster for a valid move;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+		mov		esi, [xMonPos]
+		mov		edi, [yMonPos]
+
+		; for a random number to move M in a rand direction (0 up, 1 Right, 2 down, 3 left)
+		
+		call	rand		; rand num in EAX
+		cdq					; EDX:EAX cleared except the rand number
+		mov 	ecx, 4
+		div		ecx			; remainder in edx, ( i.e. rand % 4 is in edx)	
+
+		; end get rand num		
+	
+		cmp		dl, '0'
+		je    	MoveMonsterUp
+
+		cmp 	dl, '1'
+		je		MoveMonsterRight
+	
+		cmp 	dl, '2'
+		je 		MoveMonsterDown
+
+		cmp 	dl, '3'
+		je 		MoveMonsterLeft	
+		jmp 	monster_end
+
+		
+		MoveMonsterUp:
+			dec		DWORD [yMonPos]
+			jmp		input_end
+		MoveMonsterLeft:
+			dec		DWORD [xMonPos]
+			jmp		input_end
+		MoveMonsterDown:
+			inc		DWORD [yMonPos]
+			jmp		input_end
+		MoveMonsterRight:
+			inc		DWORD [xMonPos]
+
+			monster_end:
+
+
+		; compare the current position to the wall character
+		mov		eax, WIDTH
+		mul		DWORD [yMonPos]
+		add		eax, [xMonPos]
+		lea		eax, [board + eax]
+		cmp		BYTE [eax], WALL_CHAR
+		jne		valid_monster_move
+			; opps, that was an invalid move, reset
+			mov		DWORD [xpos], esi
+			mov		DWORD [ypos], edi
+
+		valid_monster_move:
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 		; draw the game board
 		call	render
@@ -132,6 +193,9 @@ asm_main:
 		call 	nonblocking_getchar
 		cmp 	al, -1
 		je		game_loop
+
+; Above this runs continously
+;;;;;;;;;;;;;;;;-------------------------------;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-----------------------
 
 		; store the current position
 		; we will test if the new position is legal
@@ -182,65 +246,6 @@ asm_main:
 
 
 
-		; Check the monster for a valid move
-
-		mov		esi, [xMonPos]
-		mov		edi, [yMonPos]
-
-		; for a random number to move M in a rand direction (0 up, 1 Right, 2 down, 3 left)
-		mov 	ah, 00h
-		int 	1ah
-
-		mov 	ax, dx
-		xor		dx, dx
-		mov		cx, 4
-		div 	cx
-
-		add		dl, '0'
-
-		cmp		dl, '0'
-		je    	MoveMonsterUp
-
-		cmp 	dl, '1'
-		je		MoveMonsterRight
-	
-		cmp 	dl, '2'
-		je 		MoveMonsterDown
-
-		cmp 	dl, '3'
-		je 		MoveMonsterLeft	
-		jmp 	monster_end
-
-		
-		MoveMonsterUp:
-			dec		DWORD [yMonPos]
-			jmp		input_end
-		MoveMonsterLeft:
-			dec		DWORD [xMonPos]
-			jmp		input_end
-		MoveMonsterDown:
-			inc		DWORD [yMonPos]
-			jmp		input_end
-		MoveMonsterRight:
-			inc		DWORD [xMonPos]
-
-			monster_end:
-
-
-		; compare the current position to the wall character
-		mov		eax, WIDTH
-		mul		DWORD [yMonPos]
-		add		eax, [xMonPos]
-		lea		eax, [board + eax]
-		cmp		BYTE [eax], WALL_CHAR
-		jne		valid_monster_move
-			; opps, that was an invalid move, reset
-			mov		DWORD [xpos], esi
-			mov		DWORD [ypos], edi
-		valid_monster_move:
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 

@@ -1,8 +1,7 @@
 TODO:
 
-Move the monster logic to above the nonblocking_getchar or the render function itself
---- or make it it's own function that gets called by render or above nb_getchar
------------Gets the monster to move around-------------
+Monster does not segfault now, but it does not move either, work on getting a char to move by itself
+
 
 Add interaction with the monster
 
