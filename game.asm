@@ -156,6 +156,8 @@ asm_main:
 		; if not, we will restore these for PLAYER 1
 		mov		esi, [xpos]
 		mov		edi, [ypos]
+		mov		ebx, [xpos_2]
+		mov		ecx, [ypos_2]
 
 		; choose what to do
 		cmp		eax, EXITCHAR
@@ -168,6 +170,14 @@ asm_main:
 		je		move_down
 		cmp		eax, RIGHTCHAR
 		je		move_right
+		cmp		eax, UPCHAR_2
+		je		move_up_2
+		cmp 	eax, LEFTCHAR_2
+		je		move_left_2
+		cmp		eax, DOWNCHAR_2
+		je		move_down_2
+		cmp 	eax, RIGHTCHAR_2
+		je		move_right_2
 		jmp		input_end			; or just do nothing
 
 		; move the player according to the input character
@@ -182,46 +192,6 @@ asm_main:
 			jmp		input_end
 		move_right:
 			inc		DWORD [xpos]
-		input_end:
-
-		; (W * y) + x = pos
-
-		; compare the current position to the wall character
-		mov		eax, WIDTH
-		mul		DWORD [ypos]
-		add		eax, [xpos]
-		lea		eax, [board + eax]
-		cmp		BYTE [eax], WALL_CHAR
-		jne		valid_move
-			; opps, that was an invalid move, reset
-			mov		DWORD [xpos], esi
-			mov		DWORD [ypos], edi
-		valid_move:
-			cmp BYTE [eax], GOLD_CHAR
-			jne not_gold
-				add DWORD [gold_counter], 100
-				mov BYTE [eax], EMPTY_CHAR
-			not_gold:
-		
-;*************************** PLAYER 2 ***********
-		; store the current position
-		; we will test if the new position is legal
-		; if not, we will restore these for PLAYER 1
-		mov		esi, [xpos_2]
-		mov		edi, [ypos_2]
-
-		; choose what to do
-		cmp		eax, UPCHAR_2
-		je 		move_up_2
-		cmp		eax, LEFTCHAR_2
-		je		move_left_2
-		cmp		eax, DOWNCHAR_2
-		je		move_down_2
-		cmp		eax, RIGHTCHAR_2
-		je		move_right_2
-		jmp		input_end_2			; or just do nothing
-
-		; move the player according to the input character
 		move_up_2:
 			dec		DWORD [ypos_2]
 			jmp		input_end
@@ -233,11 +203,30 @@ asm_main:
 			jmp		input_end
 		move_right_2:
 			inc		DWORD [xpos_2]
-		input_end_2:
+		input_end:
 
 		; (W * y) + x = pos
 
 		; compare the current position to the wall character
+;	Player 1
+		mov		eax, WIDTH
+		mul		DWORD [ypos]
+		add		eax, [xpos]
+		lea		eax, [board + eax]
+		cmp		BYTE [eax], WALL_CHAR
+		jne		valid_move
+			; opps, that was an invalid move, reset
+			mov		DWORD [xpos], esi
+			mov		DWORD [ypos], edi
+		valid_move:
+			
+			cmp BYTE [eax], GOLD_CHAR
+			jne not_gold
+				add DWORD [gold_counter], 100
+				mov BYTE [eax], EMPTY_CHAR
+			not_gold:
+		
+;	Player 2
 		mov		eax, WIDTH
 		mul		DWORD [ypos_2]
 		add		eax, [xpos_2]
@@ -245,14 +234,17 @@ asm_main:
 		cmp		BYTE [eax], WALL_CHAR
 		jne		valid_move_2
 			; opps, that was an invalid move, reset
-			mov		DWORD [xpos_2], esi
-			mov		DWORD [ypos_2], edi
+			mov		DWORD [xpos_2], ebx
+			mov		DWORD [ypos_2], ecx
 		valid_move_2:
-			cmp BYTE [eax],GOLD_CHAR
+			cmp BYTE [eax], GOLD_CHAR
 			jne not_gold_2
 				add DWORD [gold_counter], 100
 				mov BYTE [eax], EMPTY_CHAR
 			not_gold_2:
+
+
+		
 
 	jmp		game_loop
 	game_loop_end:
