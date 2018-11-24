@@ -397,7 +397,7 @@ render:
 			mov		eax, [ypos_2]
 			cmp 	eax, DWORD [ebp-4]
 			jne		end_check_player_2
-				; if both were =, print the monster
+				; if both were =, print the second player
 				push 	PLAYER_2_CHAR
 				jmp 	print_end
 			end_check_player_2:
