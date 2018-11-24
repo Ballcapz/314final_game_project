@@ -7,10 +7,12 @@
 ; how to represent everything
 %define WALL_CHAR '#'
 %define PLAYER_CHAR 'O'
+%define	PLAYER_2_CHAR 'X'
 %define GOLD_CHAR '$'
 %define EMPTY_CHAR ' '
 %define TICK 100000	; 1/10th of a second
 %define MONSTER_CHAR 'M'
+%define SPIKE '^'
 
 ; the size of the game screen in characters
 %define HEIGHT 20
@@ -20,6 +22,9 @@
 ; top left is considered (0,0)
 %define STARTX 1
 %define STARTY 1
+%define STARTX_2 38
+%define STARTY_2 18
+
 %define MONSTERX 12
 %define MONSTERY 14
 
@@ -29,6 +34,11 @@
 %define LEFTCHAR 'a'
 %define DOWNCHAR 's'
 %define RIGHTCHAR 'd'
+
+%define UPCHAR_2 'k'
+%define LEFTCHAR_2 'h'
+%define DOWNCHAR_2 'j'
+%define RIGHTCHAR_2 'l'
 
 
 segment .data
@@ -66,9 +76,11 @@ segment .bss
 	xpos	resd	1
 	ypos	resd	1
 	
+	; these variables store the current player 2 position
+	xpos_2	resd	38
+	ypos_2	resd	18
+	
 	; these vars store the monster's position
-	xMonPos resd	12
-	yMonPos resd	14
 
 segment .text
 
@@ -90,7 +102,6 @@ segment .text
 	extern  usleep
 	extern	fcntl
 
-	extern  rand
 
 asm_main:
 	enter	0,0
@@ -106,9 +117,10 @@ asm_main:
 	; set the player at the proper start position
 	mov		DWORD [xpos], STARTX
 	mov		DWORD [ypos], STARTY
-	; set the monster at the proper start position
-	mov 	DWORD [xMonPos], MONSTERX
-	mov 	DWORD [yMonPos], MONSTERY
+
+	; set the player2 at the proper start position
+	mov		DWORD [xpos_2], STARTX_2
+	mov		DWORD [ypos_2], STARTY_2
 
 	; the game happens in this loop
 	; the steps are...
@@ -126,64 +138,6 @@ asm_main:
 		add  esp, 4
 		dec  DWORD [gold_counter]
 		
-		; Check the monster for a valid move;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-		mov		esi, [xMonPos]
-		mov		edi, [yMonPos]
-
-		; for a random number to move M in a rand direction (0 up, 1 Right, 2 down, 3 left)
-		
-		call	rand		; rand num in EAX
-		cdq					; EDX:EAX cleared except the rand number
-		mov 	ecx, 4
-		div		ecx			; remainder in edx, ( i.e. rand % 4 is in edx)	
-
-		; end get rand num		
-	
-		cmp		dl, '0'
-		je    	MoveMonsterUp
-
-		cmp 	dl, '1'
-		je		MoveMonsterRight
-	
-		cmp 	dl, '2'
-		je 		MoveMonsterDown
-
-		cmp 	dl, '3'
-		je 		MoveMonsterLeft	
-		jmp 	monster_end
-
-		
-		MoveMonsterUp:
-			dec		DWORD [yMonPos]
-			jmp		input_end
-		MoveMonsterLeft:
-			dec		DWORD [xMonPos]
-			jmp		input_end
-		MoveMonsterDown:
-			inc		DWORD [yMonPos]
-			jmp		input_end
-		MoveMonsterRight:
-			inc		DWORD [xMonPos]
-
-			monster_end:
-
-
-		; compare the current position to the wall character
-		mov		eax, WIDTH
-		mul		DWORD [yMonPos]
-		add		eax, [xMonPos]
-		lea		eax, [board + eax]
-		cmp		BYTE [eax], WALL_CHAR
-		jne		valid_monster_move
-			; opps, that was an invalid move, reset
-			mov		DWORD [xpos], esi
-			mov		DWORD [ypos], edi
-
-		valid_monster_move:
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 		; draw the game board
 		call	render
@@ -196,10 +150,10 @@ asm_main:
 
 ; Above this runs continously
 ;;;;;;;;;;;;;;;;-------------------------------;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-----------------------
-
+;******************* PLAYER 1 **********************
 		; store the current position
 		; we will test if the new position is legal
-		; if not, we will restore these
+		; if not, we will restore these for PLAYER 1
 		mov		esi, [xpos]
 		mov		edi, [ypos]
 
@@ -243,20 +197,62 @@ asm_main:
 			mov		DWORD [xpos], esi
 			mov		DWORD [ypos], edi
 		valid_move:
-
-
-
-
-
-
-
-
-
 			cmp BYTE [eax], GOLD_CHAR
 			jne not_gold
 				add DWORD [gold_counter], 100
 				mov BYTE [eax], EMPTY_CHAR
 			not_gold:
+		
+;*************************** PLAYER 2 ***********
+		; store the current position
+		; we will test if the new position is legal
+		; if not, we will restore these for PLAYER 1
+		mov		esi, [xpos_2]
+		mov		edi, [ypos_2]
+
+		; choose what to do
+		cmp		eax, UPCHAR_2
+		je 		move_up_2
+		cmp		eax, LEFTCHAR_2
+		je		move_left_2
+		cmp		eax, DOWNCHAR_2
+		je		move_down_2
+		cmp		eax, RIGHTCHAR_2
+		je		move_right_2
+		jmp		input_end_2			; or just do nothing
+
+		; move the player according to the input character
+		move_up_2:
+			dec		DWORD [ypos_2]
+			jmp		input_end
+		move_left_2:
+			dec		DWORD [xpos_2]
+			jmp		input_end
+		move_down_2:
+			inc		DWORD [ypos_2]
+			jmp		input_end
+		move_right_2:
+			inc		DWORD [xpos_2]
+		input_end_2:
+
+		; (W * y) + x = pos
+
+		; compare the current position to the wall character
+		mov		eax, WIDTH
+		mul		DWORD [ypos_2]
+		add		eax, [xpos_2]
+		lea		eax, [board + eax]
+		cmp		BYTE [eax], WALL_CHAR
+		jne		valid_move_2
+			; opps, that was an invalid move, reset
+			mov		DWORD [xpos_2], esi
+			mov		DWORD [ypos_2], edi
+		valid_move_2:
+			cmp BYTE [eax],GOLD_CHAR
+			jne not_gold_2
+				add DWORD [gold_counter], 100
+				mov BYTE [eax], EMPTY_CHAR
+			not_gold_2:
 
 	jmp		game_loop
 	game_loop_end:
@@ -394,17 +390,17 @@ render:
 		je 		x_loop_end
 
 
-			; check if (xmonpos,ymonpos) = (x,y)
-			mov		eax, [xMonPos]
+			; check if (xpos_2, ypos_2)= (x,y)
+			mov		eax, [xpos_2]
 			cmp		eax, DWORD [ebp-8]
-			jne   	end_check_mon
-			mov		eax, [yMonPos]
+			jne   	end_check_player_2
+			mov		eax, [ypos_2]
 			cmp 	eax, DWORD [ebp-4]
-			jne		end_check_mon
+			jne		end_check_player_2
 				; if both were =, print the monster
-				push 	MONSTER_CHAR
+				push 	PLAYER_2_CHAR
 				jmp 	print_end
-			end_check_mon:
+			end_check_player_2:
 
 			; check if (xpos,ypos)=(x,y)
 			mov		eax, [xpos]
