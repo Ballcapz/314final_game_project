@@ -17,6 +17,7 @@
 %define T_TP 'T'
 %define B_TP 'B'
 %define WIN_TP '@'
+%define WIN_CHAR '*'
 
 ; the size of the game screen in characters
 %define HEIGHT 20
@@ -67,12 +68,17 @@ segment .data
 							EXITCHAR,"=EXIT", \
 							13,10,10,0
 
+	
+	wincon_str			db 13,10,"Get to the *'s to win",13,10,10,0
 
 	gold_counter 		dd 1000
 	gold_fmt 			db "Gold: %d",13,10,0
 	
 	health_fmt			db "Health: %c%c%c",13,10,0
-
+	health_counter		dd  2
+	
+	p1_won				dd 0
+	p2_won				dd 0
 
 segment .bss
 
@@ -227,15 +233,31 @@ asm_main:
 			mov		DWORD [xpos], esi
 			mov		DWORD [ypos], edi
 		valid_move:
-			
+; check if the player has won			
+			cmp BYTE [eax], '*'
+			jne not_won_1
+				mov	DWORD [p1_won], 1
+				jmp check_if_won
+			not_won_1:
+
 			cmp BYTE [eax], GOLD_CHAR
 			jne not_gold
 				add DWORD [gold_counter], 100
 				mov BYTE [eax], EMPTY_CHAR
 			not_gold:
-
+; check if p1 needs to tp
 			cmp BYTE [eax], Z_TP
-			jne	not_z_tp_1
+			je	z_tp_1
+			cmp	BYTE [eax], B_TP
+			je	b_tp_1
+			cmp	BYTE [eax], T_TP
+			je	t_tp_1
+			cmp BYTE [eax], WIN_TP
+			je	win_tp_1
+			jmp no_tp_1
+
+; completes the tp	
+			z_tp_1:
 				mov		DWORD [xpos], 19
 				mov		DWORD [ypos], 11
 				; remove other z
@@ -244,10 +266,34 @@ asm_main:
 				mul 	ebx
 				add		eax, 18 
 				mov		BYTE [board + eax], EMPTY_CHAR
-			not_z_tp_1:
+				jmp		no_tp_1
+			b_tp_1:
+				mov		DWORD [xpos], 19
+				mov		DWORD [ypos], 11
+				; remove other b
+				mov		eax, 5 
+				mov		ebx, WIDTH
+				mul 	ebx
+				add		eax, 34 
+				mov		BYTE [board + eax], EMPTY_CHAR
+				jmp		no_tp_1
+			t_tp_1:
+				mov		DWORD [xpos], 19
+				mov		DWORD [ypos], 11
+				; remove other t
+				mov		eax, 14 
+				mov		ebx, WIDTH
+				mul 	ebx
+				add		eax, 35 
+				mov		BYTE [board + eax], EMPTY_CHAR
+				jmp		no_tp_1
+			win_tp_1:
+				mov		DWORD [xpos], 19
+				mov		DWORD [ypos], 11
 
+			no_tp_1:
 
-		
+	p1_has_won:		
 ;	Player 2
 		mov		eax, WIDTH
 		mul		DWORD [ypos_2]
@@ -259,14 +305,28 @@ asm_main:
 			mov		DWORD [xpos_2], ebx
 			mov		DWORD [ypos_2], ecx
 		valid_move_2:
+			cmp BYTE [eax], '*'
+			jne not_won_2
+				mov DWORD [p2_won], 1
+				jmp	check_if_won
+			not_won_2:
+	
 			cmp BYTE [eax], GOLD_CHAR
 			jne not_gold_2
 				add DWORD [gold_counter], 100
 				mov BYTE [eax], EMPTY_CHAR
 			not_gold_2:
 
+	check_if_won:
+		cmp DWORD [p1_won], 1
+		jne end_check_if_won
 
-		
+		cmp DWORD [p2_won], 1
+		jne	end_check_if_won
+	
+		jmp game_loop_end
+
+	end_check_if_won:		
 
 	jmp		game_loop
 	game_loop_end:
@@ -380,6 +440,11 @@ render:
 
 	; print the help information
 	push	help_str
+	call	printf
+	add		esp, 4
+
+	; print winning instruction
+	push	wincon_str
 	call	printf
 	add		esp, 4
 
