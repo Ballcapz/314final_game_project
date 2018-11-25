@@ -192,6 +192,7 @@ asm_main:
 			jmp		input_end
 		move_right:
 			inc		DWORD [xpos]
+			jmp 	input_end
 		move_up_2:
 			dec		DWORD [ypos_2]
 			jmp		input_end
