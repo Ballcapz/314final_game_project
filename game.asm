@@ -13,6 +13,10 @@
 %define TICK 100000	; 1/10th of a second
 %define MONSTER_CHAR 'M'
 %define SPIKE '^'
+%define Z_TP 'Z'
+%define T_TP 'T'
+%define B_TP 'B'
+%define WIN_TP '@'
 
 ; the size of the game screen in characters
 %define HEIGHT 20
@@ -66,6 +70,9 @@ segment .data
 
 	gold_counter 		dd 1000
 	gold_fmt 			db "Gold: %d",13,10,0
+	
+	health_fmt			db "Health: %c%c%c",13,10,0
+
 
 segment .bss
 
@@ -226,6 +233,14 @@ asm_main:
 				add DWORD [gold_counter], 100
 				mov BYTE [eax], EMPTY_CHAR
 			not_gold:
+
+			cmp BYTE [eax], Z_TP
+			jne	not_z_tp_1
+				mov		DWORD [xpos], 19
+				mov		DWORD [ypos], 11
+			not_z_tp_1:
+
+
 		
 ;	Player 2
 		mov		eax, WIDTH

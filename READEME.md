@@ -1,8 +1,6 @@
 TODO:
-1. Fix the 2nd player, it is not moving
-		-- make the control all in one place instead of seperate, put p2 pos into ebx,ecx? or something
 ----------------- IDEAS --------------------
-Teleport from a letter to an unknown place, both characters have to be on a letter to teleport
+Teleport from a letter to an unknown place, when one p teleports, the other matching letter dissappears
 
 one health bar for both players, lose health by touching ^ (spikes)
 
@@ -18,7 +16,9 @@ with < full health, 800 points
 
  a win with lost health and no $ means 200 points
 
-
+Done:
+1. 2 players both able to move
+2. 
 
 
 
