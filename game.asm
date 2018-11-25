@@ -238,6 +238,12 @@ asm_main:
 			jne	not_z_tp_1
 				mov		DWORD [xpos], 19
 				mov		DWORD [ypos], 11
+				; remove other z
+				mov		eax, 18
+				mov		ebx, WIDTH
+				mul 	ebx
+				add		eax, 18 
+				mov		BYTE [board + eax], EMPTY_CHAR
 			not_z_tp_1:
 
 
