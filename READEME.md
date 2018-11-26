@@ -1,13 +1,6 @@
 TODO:
-* Health bars for the players, lose health on spikes(^)
 * Add a running time
 	- maybe collectng $ instead
-
------------------ IDEAS --------------------
-Teleport from a letter to an unknown place, when one p teleports, the other matching letter dissappears
-
-@ teleports players to the win square (19,11)/(19/12)
-
 FIX
 -------
 ************************************************************************
@@ -16,7 +9,7 @@ Done:
 2. A player reaching a star wins, message displays, game ends
 3. Teleporting
 4. Player Sore based on $ collection, 500 pts to winner, score in winning message
-5.
+5. Health works, die by spikes (^), player moves to "Dead square" when out of health
 
 ************************************************************************
 

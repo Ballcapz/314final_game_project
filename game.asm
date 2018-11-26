@@ -12,12 +12,13 @@
 %define EMPTY_CHAR ' '
 %define TICK 100000	; 1/10th of a second
 %define MONSTER_CHAR 'M'
-%define SPIKE '^'
+%define SPIKE_CHAR '^'
 %define Z_TP 'Z'
 %define T_TP 'T'
 %define B_TP 'B'
 %define WIN_TP '@'
 %define WIN_CHAR '*'
+%define HEALTH_CHAR '&'
 
 ; the size of the game screen in characters
 %define HEIGHT 20
@@ -86,9 +87,11 @@ segment .data
 	gold_fmt_2 			db "Player 2 Score: %d",13,10,0
 	
 
-	
-	health_fmt			db "Health: %c%c%c",13,10,0
-	health_counter		dd  2
+; for the player's health bars	
+	health_fmt_1		db "Player 1 Health: %c%c%c",13,10,0
+	health_fmt_2		db "Player 2 Health: %c%c%c",13,10,0
+	health_counter_1	dd  3
+	health_counter_2	dd  3
 	
 	p1_won				db 13,10,"Player 1 wins with a score of %d!",13,10,10,0
 	p2_won				db 13,10,"Player 2 wins with a score of %d!",13,10,10,0
@@ -162,7 +165,17 @@ asm_main:
 		push TICK
 		call usleep
 		add  esp, 4
-		
+	
+		cmp		DWORD [health_counter_1], 0
+		jge		p1_is_alive
+			mov		DWORD [xpos], 16
+			mov		DWORD [ypos], 18
+		p1_is_alive:		
+		cmp		DWORD [health_counter_2], 0
+		jge		p2_is_alive
+			mov		DWORD [xpos_2], 18
+			mov		DWORD [ypos_2], 18
+		p2_is_alive:		
 
 		; draw the game board
 		call	render
@@ -250,7 +263,12 @@ asm_main:
 			jne not_won_1
 				jmp player_1_win
 			not_won_1:
-
+; check if the player touches a spike and loses health
+			cmp	BYTE [eax], SPIKE_CHAR
+			jne	no_spike_1
+				dec DWORD [health_counter_1]
+			no_spike_1:
+; check if the player scores
 			cmp BYTE [eax], GOLD_CHAR
 			jne not_gold
 				add DWORD [gold_counter_1], 100
@@ -315,12 +333,20 @@ asm_main:
 			mov		DWORD [xpos_2], ebx
 			mov		DWORD [ypos_2], ecx
 		valid_move_2:
-		
+
+; check if the player wins		
 			cmp BYTE [eax], WIN_CHAR
 			jne not_won_2
 				jmp player_2_win
 			not_won_2:
-	
+
+; check if the player touches a spike and loses health
+			cmp	BYTE [eax], SPIKE_CHAR
+			jne	no_spike_2
+				dec DWORD [health_counter_2]
+			no_spike_2:
+
+; check if the player scores
 			cmp BYTE [eax], GOLD_CHAR
 			jne not_gold_2
 				add DWORD [gold_counter_2], 100
@@ -525,6 +551,84 @@ render:
 	push 	gold_fmt_2
 	call 	printf
 	add 	esp, 8
+	
+	; print the health bars ;;;;;;;;;;;;;;
+	; player 1
+	cmp		DWORD [health_counter_1], 3
+	je		full_health_1
+	cmp		DWORD [health_counter_1], 2
+	je		two_health_1
+	cmp		DWORD [health_counter_1], 1
+	je		one_health_1
+	cmp		DWORD [health_counter_1], 0
+	je		no_health_1
+	jmp		p1_dead
+
+	full_health_1:
+		push	HEALTH_CHAR		
+		push	HEALTH_CHAR		
+		push	HEALTH_CHAR		
+		jmp		end_health_1
+	two_health_1:
+		push 	EMPTY_CHAR
+		push	HEALTH_CHAR		
+		push	HEALTH_CHAR		
+		jmp		end_health_1
+	one_health_1:	
+		push 	EMPTY_CHAR
+		push 	EMPTY_CHAR
+		push	HEALTH_CHAR		
+		jmp 	end_health_1
+	no_health_1:
+		push 	EMPTY_CHAR
+		push 	EMPTY_CHAR
+		push 	EMPTY_CHAR
+			
+	end_health_1:
+	push	health_fmt_1
+	call	printf
+	add		esp, 16
+
+	p1_dead:
+	
+	
+	; player 2
+	cmp		DWORD [health_counter_2], 3
+	je		full_health_2
+	cmp		DWORD [health_counter_2], 2
+	je		two_health_2
+	cmp		DWORD [health_counter_2], 1
+	je		one_health_2
+	cmp		DWORD [health_counter_2], 0
+	je		no_health_2
+	jmp		p2_dead
+
+	full_health_2:
+		push	HEALTH_CHAR		
+		push	HEALTH_CHAR		
+		push	HEALTH_CHAR		
+		jmp		end_health_2
+	two_health_2:
+		push 	EMPTY_CHAR
+		push	HEALTH_CHAR		
+		push	HEALTH_CHAR		
+		jmp		end_health_2
+	one_health_2:	
+		push 	EMPTY_CHAR
+		push 	EMPTY_CHAR
+		push	HEALTH_CHAR		
+		jmp 	end_health_2
+	no_health_2:
+		push 	EMPTY_CHAR
+		push 	EMPTY_CHAR
+		push 	EMPTY_CHAR
+			
+	end_health_2:
+	push	health_fmt_2
+	call	printf
+	add		esp, 16
+
+	p2_dead:
 
 	; outside loop by height
 	; i.e. for(c=0; c<height; c++)
