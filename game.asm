@@ -79,14 +79,19 @@ segment .data
 	
 	wincon_str			db 13,10,"Get to the *'s to win",13,10,10,0
 
-	gold_counter 		dd 1000
-	gold_fmt 			db "Gold: %d",13,10,0
+	gold_counter_1 		dd 0
+	gold_counter_2 		dd 0
+	
+	gold_fmt_1 			db "Player 1 Score: %d",13,10,0
+	gold_fmt_2 			db "Player 2 Score: %d",13,10,0
+	
+
 	
 	health_fmt			db "Health: %c%c%c",13,10,0
 	health_counter		dd  2
 	
-	p1_won				db 13,10,"Player 1 wins!",13,10,10,0
-	p2_won				db 13,10,"Player 2 wins!",13,10,10,0
+	p1_won				db 13,10,"Player 1 wins with a score of %d!",13,10,10,0
+	p2_won				db 13,10,"Player 2 wins with a score of %d!",13,10,10,0
 
 segment .bss
 
@@ -157,7 +162,6 @@ asm_main:
 		push TICK
 		call usleep
 		add  esp, 4
-		dec  DWORD [gold_counter]
 		
 
 		; draw the game board
@@ -249,7 +253,7 @@ asm_main:
 
 			cmp BYTE [eax], GOLD_CHAR
 			jne not_gold
-				add DWORD [gold_counter], 100
+				add DWORD [gold_counter_1], 100
 				mov BYTE [eax], EMPTY_CHAR
 			not_gold:
 ; check if p1 needs to tp
@@ -319,7 +323,7 @@ asm_main:
 	
 			cmp BYTE [eax], GOLD_CHAR
 			jne not_gold_2
-				add DWORD [gold_counter], 100
+				add DWORD [gold_counter_2], 100
 				mov BYTE [eax], EMPTY_CHAR
 			not_gold_2:
 
@@ -375,15 +379,19 @@ asm_main:
 	jmp		game_loop
 
 	player_1_win:
+		add		DWORD [gold_counter_1], 500
+		push 	DWORD [gold_counter_1]
 		push	p1_won
 		call	printf
-		add		esp, 4
+		add		esp, 8
 	jmp 	game_loop_end
 
 	player_2_win:
+		add		DWORD [gold_counter_2], 500
+		push 	DWORD [gold_counter_2]
 		push	p2_won
 		call	printf
-		add		esp, 4
+		add		esp, 8
 	game_loop_end:
 
 	; restore old terminal functionality
@@ -507,9 +515,14 @@ render:
 	call	printf
 	add		esp, 4
 
-	; print the score
-	push 	DWORD [gold_counter]
-	push 	gold_fmt
+	; print the score p1
+	push 	DWORD [gold_counter_1]
+	push 	gold_fmt_1
+	call 	printf
+	add 	esp, 8
+	; p2	
+	push 	DWORD [gold_counter_2]
+	push 	gold_fmt_2
 	call 	printf
 	add 	esp, 8
 
